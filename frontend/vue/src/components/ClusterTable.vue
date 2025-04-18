@@ -63,6 +63,11 @@ export default defineComponent({
     const regions = ref<string[]>([])
     const clustersNames = ref<string[]>([])
     const loading = ref(false)
+    const url = import.meta.env.VITE_APP_BACKEND_URL
+    const fqdn = `${url}/api/eks/clusters`
+
+    console.log('URL:', url)
+    console.log('FQDN:', fqdn)
 
     const selectedAccount = ref('')
     const selectedRegion = ref('')
@@ -71,7 +76,7 @@ export default defineComponent({
     const fetchClusters = async () => {
       loading.value = true
       try {
-        const response = await axios.get('http://localhost:3000/api/eks/clusters')
+        const response = await axios.get(fqdn)
 
         console.log('Raw response:', response)
         console.log('Raw data:', response.data)
