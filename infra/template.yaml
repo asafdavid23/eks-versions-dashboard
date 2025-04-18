@@ -51,8 +51,6 @@ Resources:
     Type: AWS::CloudFront::Distribution
     DependsOn: S3Bucket
     Properties:
-      ForwardedValues:
-        
       DistributionConfig:
         Enabled: 'true'
         Origins:
@@ -66,6 +64,8 @@ Resources:
           AllowedMethods:
             - GET
             - HEAD
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf 
         PriceClass: PriceClass_100 # Use this for the lowest cost, or adjust based on your needs
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
