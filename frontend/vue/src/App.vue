@@ -6,8 +6,7 @@
 </template>
 
 <script lang="ts">
-import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import { ref } from 'vue'
 import ClusterTable from './components/ClusterTable.vue'
 
 interface Cluster {
@@ -23,18 +22,6 @@ export default {
   },
   setup() {
     const clusters = ref<Cluster[]>([])
-
-    // Fetch EKS clusters from the backend API (Lambda via API Gateway)
-    const fetchClusters = async () => {
-      try {
-        const response = await axios.get<{ data: Cluster[] }>('http://localhost:3000/api/eks/clusters')
-        clusters.value = response.data
-      } catch (error) {
-        console.error('Error fetching clusters:', error)
-      }
-    }
-
-    onMounted(fetchClusters)
 
     return {
       clusters

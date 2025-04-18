@@ -44,7 +44,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, watch, onMounted } from 'vue'
+import { defineComponent, ref, onMounted } from 'vue'
 import axios from 'axios'
 import { computed } from 'vue'
 
@@ -88,13 +88,6 @@ export default defineComponent({
         clusters.value = normalizedClusters
       } catch (err) {
         console.error('Failed to fetch clusters:', err)
-        if (err.response) {
-          console.error('Backend responded with:', err.response.status, err.response.data)
-        } else if (err.request) {
-          console.error('No response received:', err.request)
-        } else {
-          console.error('Error in setting up request:', err.message)
-        }
         clusters.value = []
       } finally {
         loading.value = false
@@ -140,9 +133,6 @@ export default defineComponent({
         console.error('Failed to load regions.json:', err)
       }
     }
-
-    // Fetch when filters change
-    // watch([selectedAccount, selectedRegion, selectedCluster], fetchClusters)
 
     // Initial load
     onMounted(() => {

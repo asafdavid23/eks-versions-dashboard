@@ -16,18 +16,59 @@ Globals:
 
 
 Resources:
-  EKSVersionsDashboardApi:
-    Type: AWS::Serverless::Api # More info about API Resource:
+  S3Bucket:
+    Type: AWS::S3::Bucket
     Properties:
-      StageName: Prod
-      # EndpointConfiguration: REGIONAL
-      Cors:
-        AllowMethods: "'OPTIONS,GET'"
-        AllowHeaders: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-        AllowOrigin: "'*'"
-        MaxAge: 3000
-        StatusCode: 200 
+      BucketName: !Sub "${AWS::AccountId}-${AWS::Region}-eks-versions-dashboard"
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
 
+  CloudFrontOriginAccessIdentity:
+    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+    DependsOn: S3Bucket
+    Properties:
+      CloudFrontOriginAccessIdentityConfig:
+        Comment: !Sub "Origin Access Identity for ${S3Bucket}"
+
+  S3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    DependsOn: S3Bucket
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                Fn::Sub: arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudFrontOriginAccessIdentity}
+            Action: s3:GetObject
+            Resource:
+              Fn::Sub: arn:aws:s3:::${S3Bucket}/*
+
+  CloudFront:
+    Type: AWS::CloudFront::Distribution
+    DependsOn: S3Bucket
+    Properties:
+      ForwardedValues:
+        
+      DistributionConfig:
+        Enabled: 'true'
+        Origins:
+          - Id: S3-S3Bucket
+            DomainName: !GetAtt S3Bucket.DomainName
+            S3OriginConfig:
+              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}"
+        DefaultCacheBehavior:
+          TargetOriginId: S3-S3Bucket
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+        PriceClass: PriceClass_100 # Use this for the lowest cost, or adjust based on your needs
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
 
   EKSVersionsDashboardBackend:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
@@ -46,14 +87,9 @@ Resources:
           Properties:
             Path: /api/eks/clusters
             Method: GET
-            RestApiId: !Ref EKSVersionsDashboardApi
-            Auth:
-              ApiKeyRequired: false
+
 
 Outputs:
-  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
-  # Find out more about other implicit resources you can reference within SAM
-  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
   EKSVersionsDashboardApi:
     Description: API Gateway endpoint URL for Prod stage for Hello World function
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
