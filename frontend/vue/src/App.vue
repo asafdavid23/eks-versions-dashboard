@@ -1,6 +1,6 @@
 <template>
   <div id="app">
-    <h1>EKS Clusters</h1>
+    <h1>Earnix EKS Dashboard</h1>
     <ClusterTable :clusters="clusters" />
   </div>
 </template>

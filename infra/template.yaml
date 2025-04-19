@@ -119,10 +119,10 @@ Resources:
         AllowHeaders: "'Content-Type,X-Api-Key,Access-Control-Allow-Origin'"
         AllowOrigin: "'https://d1fghl4jj9578s.cloudfront.net'"
 
-  EKSVersionsDashboardBackend:
+  BackendLambda:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
-      CodeUri: backend/
+      CodeUri: ../backend/
       Handler: app.lambda_handler
       Runtime: python3.12
       Environment:
@@ -149,9 +149,9 @@ Outputs:
   EKSVersionsDashboardApi:
     Description: API Gateway endpoint URL for Prod stage for Hello World function
     Value: !Sub "https://${APIGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/api/eks/clusters"
-  EKSVersionsDashboardBackend:
+  BackendLambda:
     Description: Hello World Lambda Function ARN
-    Value: !GetAtt EKSVersionsDashboardBackend.Arn
-  EKSVersionsDashboardBackendIamRole:
+    Value: !GetAtt BackendLambda.Arn
+  BackendLambdaIamRole:
     Description: Implicit IAM Role created for Hello World function
-    Value: !GetAtt EKSVersionsDashboardBackendRole.Arn
+    Value: !GetAtt BackendLambdaRole.Arn

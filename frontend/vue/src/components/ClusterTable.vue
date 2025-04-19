@@ -1,25 +1,41 @@
 <template>
-  <div>
-    <h2>Filter Clusters</h2>
-    <div class="filters">
-      <label>
-        Account:
-        <select v-model="selectedAccount">
-          <option value="">All</option>
-          <option v-for="acc in accounts" :key="acc" :value="acc">{{ acc }}</option>
-        </select>
-      </label>
+  <div id="app">
+    <header>
+      <img src="/earnix_logo.svg" alt="Earnix Logo" id="logo" />
+    </header>
+    
+    <!-- Filters Section -->
+    <div class="filter-container">
+      <div class="filters">
+        <label>
+          Account:
+          <select v-model="selectedAccount">
+            <option value="">All</option>
+            <option v-for="acc in accounts" :key="acc" :value="acc">{{ acc }}</option>
+          </select>
+        </label>
 
-      <label>
-        Region:
-        <select v-model="selectedRegion">
-          <option value="">All</option>
-          <option v-for="reg in regions" :key="reg" :value="reg">{{ reg }}</option>
-        </select>
-      </label>
+        <label>
+          Region:
+          <select v-model="selectedRegion">
+            <option value="">All</option>
+            <option v-for="reg in regions" :key="reg" :value="reg">{{ reg }}</option>
+          </select>
+        </label>
+        <label>
+          Version:
+          <select v-model="selectedVersion">
+            <option value="">All</option>
+            <option v-for="v in versions" :key="v" :value="v">{{ v }}</option>
+          </select>
+        </label>
+      </div>
     </div>
 
+    <!-- Loading State -->
     <div v-if="loading">Loading...</div>
+
+    <!-- Cluster Table -->
     <table v-else-if="clusters.length > 0">
       <thead>
         <tr>
@@ -62,6 +78,8 @@ export default defineComponent({
     const accounts = ref<string[]>([])
     const regions = ref<string[]>([])
     const clustersNames = ref<string[]>([])
+    const versions = ref<string[]>([])
+    const selectedVersion = ref('')
     const loading = ref(false)
     const apiKey = import.meta.env.VITE_API_KEY || ''
     const stage = import.meta.env.VITE_API_STAGE || ''
@@ -90,7 +108,7 @@ export default defineComponent({
 
         const rawClusters = response.data.clusters || []
 
-        const normalizedClusters = rawClusters.map((c: any) => ({
+        const normalizedClusters: Cluster[] = rawClusters.map((c: any) => ({
           name: c.name,
           version: c.version,
           region: c.region,
@@ -98,6 +116,16 @@ export default defineComponent({
         }))
 
         clusters.value = normalizedClusters
+
+        // Ensure versions are strings
+        const allVersions = [...new Set(normalizedClusters.map(c => c.version))]
+        versions.value = allVersions.sort()
+
+        const allAccounts = [...new Set(normalizedClusters.map(c => c.account))]
+        accounts.value = allAccounts.sort()
+
+        const allRegions = [...new Set(normalizedClusters.map(c => c.region))]
+        regions.value = allRegions.sort()
       } catch (err) {
         console.error('Failed to fetch clusters:', err)
         clusters.value = []
@@ -110,47 +138,36 @@ export default defineComponent({
       return clusters.value.filter(cluster => {
         const accountMatch = selectedAccount.value === '' || cluster.account === selectedAccount.value
         const regionMatch = selectedRegion.value === '' || cluster.region === selectedRegion.value
+        const versionMatch = selectedVersion.value === '' || cluster.version === selectedVersion.value
         const clusterMatch = selectedCluster.value === '' || cluster.name === selectedCluster.value
 
-        return accountMatch && regionMatch && clusterMatch
+        return accountMatch && regionMatch && versionMatch && clusterMatch
       })
     })
 
-
-
-
     // const fetchAccounts = async () => {
     //   try {
-    //     const response = await axios.get('http://localhost:3000/api/accounts')
-    //     accounts.value = response.data || []
+    //     const response = await axios.get('/accounts.json') // Loads from public/accounts.json
+    //     accounts.value = response.data.accounts || []
     //   } catch (err) {
-    //     console.error('Failed to fetch accounts:', err)
+    //     console.error('Failed to load accounts.json:', err)
     //   }
     // }
 
-    const fetchAccounts = async () => {
-      try {
-        const response = await axios.get('/accounts.json') // Loads from public/accounts.json
-        accounts.value = response.data.accounts || []
-      } catch (err) {
-        console.error('Failed to load accounts.json:', err)
-      }
-    }
-
-    const fetchRegions = async () => {
-      try {
-        const response = await axios.get('/regions.json') // Loads from public/regions.json
-        regions.value = response.data.regions || []
-      } catch (err) {
-        console.error('Failed to load regions.json:', err)
-      }
-    }
+    // const fetchRegions = async () => {
+    //   try {
+    //     const response = await axios.get('/regions.json') // Loads from public/regions.json
+    //     regions.value = response.data.regions || []
+    //   } catch (err) {
+    //     console.error('Failed to load regions.json:', err)
+    //   }
+    // }
 
     // Initial load
     onMounted(() => {
-      fetchAccounts()
+      // fetchAccounts()
       fetchClusters()
-      fetchRegions()
+      // fetchRegions()
     })
 
     return {
@@ -162,7 +179,9 @@ export default defineComponent({
       selectedCluster,
       clustersNames,
       filteredClusters,
-      loading
+      loading,
+      versions,
+      selectedVersion
     }
   }
 })
