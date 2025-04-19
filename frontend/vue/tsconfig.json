@@ -16,7 +16,19 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitThis": true,
-    "alwaysStrict": true
+    "alwaysStrict": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@components/*": ["src/components/*"],
+      "@composables": ["src/composables"],
+      "@views/*": ["src/views/*"],
+      "@store/*": ["src/store/*"],
+      "@router/*": ["src/router/*"],
+      "@assets/*": ["src/assets/*"],
+      "@utils/*": ["src/utils/*"]
+    },
+    
   },
   "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
   "exclude": ["node_modules"]
