@@ -26,7 +26,6 @@ Resources:
 
   CloudFrontOriginAccessControl:
     Type: AWS::CloudFront::OriginAccessControl
-    DependsOn: S3Bucket
     Properties:
       OriginAccessControlConfig:
         Name: !Sub "${S3Bucket}-OAC"
@@ -37,7 +36,6 @@ Resources:
 
   S3BucketPolicy:
     Type: AWS::S3::BucketPolicy
-    DependsOn: S3Bucket
     Properties:
       Bucket: !Ref S3Bucket
       PolicyDocument:
@@ -49,10 +47,12 @@ Resources:
             Action: s3:GetObject
             Resource:
               Fn::Sub: arn:aws:s3:::${S3Bucket}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFront.Id}
 
   CloudFront:
     Type: AWS::CloudFront::Distribution
-    DependsOn: S3Bucket
     Properties:
       DistributionConfig:
         Enabled: 'true'
@@ -102,6 +102,23 @@ Resources:
         - arm64
       LicenseInfo: MIT
 
+  APIGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: eks-versions-dashboard-api
+      Description: eks-versions-dashboard API
+      StageName: Prod
+      Auth:
+        ApiKeyRequired: false
+        UsagePlan:
+          CreateUsagePlan: PER_API
+          Description: eks-versions-dashboard API key
+          UsagePlanName: eks-versions-dashboard-usage-plan
+      Cors:
+        AllowMethods: "'OPTIONS,GET'"
+        AllowHeaders: "'Content-Type,X-Api-Key,Access-Control-Allow-Origin'"
+        AllowOrigin: "'https://d1fghl4jj9578s.cloudfront.net'"
+
   EKSVersionsDashboardBackend:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
@@ -120,16 +137,18 @@ Resources:
         - PowerUserAccess
       Events:
         EKSVersionsDashboardApi:
-          Type: Api # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Type: Api
+           # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
           Properties:
             Path: /api/eks/clusters
             Method: GET
+            RestApiId: !Ref APIGateway
 
 
 Outputs:
   EKSVersionsDashboardApi:
     Description: API Gateway endpoint URL for Prod stage for Hello World function
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/api/eks/clusters"
+    Value: !Sub "https://${APIGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/api/eks/clusters"
   EKSVersionsDashboardBackend:
     Description: Hello World Lambda Function ARN
     Value: !GetAtt EKSVersionsDashboardBackend.Arn

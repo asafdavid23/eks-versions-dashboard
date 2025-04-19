@@ -9,9 +9,15 @@ export default defineComponent({
         const regions = ref([]);
         const clustersNames = ref([]);
         const loading = ref(false);
+        const apiKey = import.meta.env.VITE_API_KEY || '';
         const stage = import.meta.env.VITE_API_STAGE || '';
         const url = import.meta.env.VITE_APP_BACKEND_URL;
         const fqdn = `${url}/${stage}/api/eks/clusters`;
+        const headers = {
+            'X-API-Key': apiKey,
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json',
+        };
         console.log('URL:', url);
         console.log('FQDN:', fqdn);
         const selectedAccount = ref('');
@@ -20,7 +26,7 @@ export default defineComponent({
         const fetchClusters = async () => {
             loading.value = true;
             try {
-                const response = await axios.get(fqdn);
+                const response = await axios.get(fqdn, { headers });
                 console.log('Raw response:', response);
                 console.log('Raw data:', response.data);
                 const rawClusters = response.data.clusters || [];

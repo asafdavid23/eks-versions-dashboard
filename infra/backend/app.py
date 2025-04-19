@@ -103,7 +103,12 @@ def lambda_handler(event, context):
             logger.error("No config found in SSM")
             return {
                 "statusCode": 500,
-                "headers": {"Content-Type": "application/json"},
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "OPTIONS,GET",
+                    "Access-Control-Allow-Headers": "'Content-Type,X-Api-Key,Access-Control-Allow-Origin'"
+                },
                 "body": json.dumps({"error": "Internal server error: No config found"})
             }
             
@@ -128,22 +133,34 @@ def lambda_handler(event, context):
         if not all_data:
             return {
                 "statusCode": 404,
-                "headers": {"Content-Type": "application/json"},
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "OPTIONS,GET",
+                    "Access-Control-Allow-Headers": "'Content-Type,X-Api-Key,Access-Control-Allow-Origin'"
+                },
                 "body": json.dumps({"error": "No clusters found"})
             }
 
         return {
             "statusCode": 200,
-            "headers": {
-                "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*"
-            },
+                "headers": {
+                    "Content-Type": "application/json",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "OPTIONS,GET",
+                    "Access-Control-Allow-Headers": "'Content-Type,X-Api-Key,Access-Control-Allow-Origin'"
+                },
             "body": json.dumps({"clusters": all_data})
         }
     except Exception as e:
         logger.error(f"Unhandled error in Lambda handler: {str(e)}", exc_info=True)
         return {
             "statusCode": 500,
-            "headers": {"Content-Type": "application/json"},
+            "headers": {
+                "Content-Type": "application/json",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "OPTIONS,GET",
+                "Access-Control-Allow-Headers": "'Content-Type,X-Api-Key,Access-Control-Allow-Origin'"
+            },
             "body": json.dumps({"error": f"Internal server error: {str(e)}"})
         }
