@@ -1,0 +1,16 @@
+version: 3
+
+tasks:
+  validate:
+    cmds:
+      - echo "Validating SAM template"
+      - cd infra && sam validate
+
+  deploy:
+    cmds:
+      - echo "Validateing AWS credentials"
+      - if [ -z "$(aws sts get-caller-identity)" ]; then echo "AWS credentials are not configured"; exit 1; fi
+      - echo "Deploying SAM application"
+      - cd infra && sam deploy
+
+

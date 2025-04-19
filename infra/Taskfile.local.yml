@@ -1,0 +1,9 @@
+version: 3
+
+tasks:
+  start:
+    cmds:
+      - echo "Run SAM local with Docker"
+      - sam local start-api
+
+

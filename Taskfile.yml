@@ -1,0 +1,26 @@
+version: 3
+
+dotenv:
+  - .env
+  - .env.local
+
+includes:
+  fe-local: ./frontend/Taskfile.local.yml
+  fe-prod: ./frontend/Taskfile.prod.yml
+  be-local: ./infra/Taskfile.local.yml
+  be-prod: ./infra/Taskfile.prod.yml
+
+tasks:
+  up-local:
+    desc: "Run local development environment"
+    cmds:
+      - echo "Starting local development environment"
+      - task: fe-local:start
+      - task: be-local:start
+
+  down-local:
+    desc: "Stop local development environment"
+    cmds:
+      - echo "Stopping local development environment"
+      - task: fe-local:stop
+      - task: be-local:stop
