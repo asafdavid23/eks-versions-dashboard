@@ -1,0 +1,19 @@
+version: 3
+
+tasks:
+  start-api:
+    cmds:
+      - nohup sam local start-api > sam.log 2>&1 & echo $! > sam.pid
+    silent: true
+
+  stop-api:
+    cmds:
+      - |
+        if [ -f sam.pid ]; then
+          kill $(cat sam.pid) && rm sam.pid
+          echo "SAM local API server stopped."
+        else
+          echo "No PID file found. SAM server may not be running."
+        fi
+    silent: false
+

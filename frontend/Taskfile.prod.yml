@@ -1,22 +1,19 @@
 version: '3'
 
-dotenv:
-  - .env
-  - .env.production
 
 tasks:
   build:
     cmds:
       - echo "Cleaning up old build artifacts"
-      - rm -rf vue/dist
+      - rm -rf frontend/vue/dist
       - echo "Installing dependencies"
-      - cd vue && npm install
+      - cd frontend/vue && npm install
       - echo "Verifying API key is set"
       - if [ -z "$VITE_API_KEY" ]; then echo "VITE_API_KEY is not set"; exit 1; fi
       - echo "Build Vue.js frontend"
-      - cd vue && npm run build -- --mode production
+      - cd frontend/vue && npm run build -- --mode production
       - echo "Verifying dist folder is not empty"
-      - if [ ! -d vue/dist ] || [ -z "$(ls -A vue/dist)" ]; then echo "dist folder is empty"; exit 1; fi
+      - if [ ! -d frontend/vue/dist ] || [ -z "$(ls -A frontend/vue/dist)" ]; then echo "dist folder is empty"; exit 1; fi
       - echo "Frontend build completed"
 
   deploy:
@@ -28,7 +25,7 @@ tasks:
       - echo "Cleaning up old build artifacts"
       - aws s3 rm s3://$S3_BUCKET --recursive
       - echo "Deploying Vue.js frontend to S3"
-      - aws s3 cp vue/dist s3://$S3_BUCKET --recursive
+      - aws s3 cp frontend/vue/dist s3://$S3_BUCKET --recursive
       - echo "Frontend deployed to S3 bucket $S3_BUCKET"
       - echo "Invalidating CloudFront cache"
       - aws cloudfront create-invalidation --distribution-id $CF_DIST --paths "/*"
