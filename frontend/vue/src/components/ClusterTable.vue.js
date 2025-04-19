@@ -9,8 +9,9 @@ export default defineComponent({
         const regions = ref([]);
         const clustersNames = ref([]);
         const loading = ref(false);
+        const stage = import.meta.env.VITE_API_STAGE || '';
         const url = import.meta.env.VITE_APP_BACKEND_URL;
-        const fqdn = `${url}/api/eks/clusters`;
+        const fqdn = `${url}/${stage}/api/eks/clusters`;
         console.log('URL:', url);
         console.log('FQDN:', fqdn);
         const selectedAccount = ref('');

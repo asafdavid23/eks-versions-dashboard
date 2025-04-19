@@ -24,12 +24,16 @@ Resources:
         IndexDocument: index.html
         ErrorDocument: error.html
 
-  CloudFrontOriginAccessIdentity:
-    Type: AWS::CloudFront::CloudFrontOriginAccessIdentity
+  CloudFrontOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
     DependsOn: S3Bucket
     Properties:
-      CloudFrontOriginAccessIdentityConfig:
-        Comment: !Sub "Origin Access Identity for ${S3Bucket}"
+      OriginAccessControlConfig:
+        Name: !Sub "${S3Bucket}-OAC"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+        Description: !Sub "OAC for ${S3Bucket}"
 
   S3BucketPolicy:
     Type: AWS::S3::BucketPolicy
@@ -41,8 +45,7 @@ Resources:
         Statement:
           - Effect: Allow
             Principal:
-              AWS:
-                Fn::Sub: arn:aws:iam::cloudfront:user/CloudFront Origin Access Identity ${CloudFrontOriginAccessIdentity}
+              Service: "cloudfront.amazonaws.com"
             Action: s3:GetObject
             Resource:
               Fn::Sub: arn:aws:s3:::${S3Bucket}/*
@@ -55,9 +58,10 @@ Resources:
         Enabled: 'true'
         Origins:
           - Id: S3-S3Bucket
-            DomainName: !GetAtt S3Bucket.DomainName
-            S3OriginConfig:
-              OriginAccessIdentity: !Sub "origin-access-identity/cloudfront/${CloudFrontOriginAccessIdentity}"
+            DomainName: !GetAtt S3Bucket.RegionalDomainName
+            OriginAccessControlId: !Ref CloudFrontOriginAccessControl
+            S3OriginConfig: {}
+        DefaultRootObject: index.html
         DefaultCacheBehavior:
           TargetOriginId: S3-S3Bucket
           ViewerProtocolPolicy: redirect-to-https
@@ -70,14 +74,48 @@ Resources:
         ViewerCertificate:
           CloudFrontDefaultCertificate: true
 
+  SSMConfig:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /devops/eks/version_ashboard/config
+      Type: String
+      Description: Configuration for eks-versions-dashboard
+      Value: |
+        spoke_accounts:
+          - account_id: 587217771608
+            account_name: dev
+            role_name: terraform-role-poweruser
+            regions:
+            - eu-west-1
+            - us-east-1
+            - eu-north-1
+
+  BackendLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: eks-versions-dashboard-backend
+      Description: eks-versions-dashboard backend layer
+      ContentUri: layer/python
+      CompatibleRuntimes:
+        - python3.13
+      CompatibleArchitectures:
+        - x86_64
+        - arm64
+      LicenseInfo: MIT
+
   EKSVersionsDashboardBackend:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
       CodeUri: backend/
       Handler: app.lambda_handler
       Runtime: python3.13
+      Environment:
+        Variables:
+          SSM_CONFIG_PATH: !Ref SSMConfig
       Architectures:
-      - x86_64
+      - arm64
+      Layers:
+        - !Ref BackendLayer
       Policies:
         - AWSLambdaBasicExecutionRole
         - PowerUserAccess
@@ -92,7 +130,7 @@ Resources:
 Outputs:
   EKSVersionsDashboardApi:
     Description: API Gateway endpoint URL for Prod stage for Hello World function
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/api/eks/clusters"
   EKSVersionsDashboardBackend:
     Description: Hello World Lambda Function ARN
     Value: !GetAtt EKSVersionsDashboardBackend.Arn

@@ -2,9 +2,10 @@ import boto3
 import json
 import os
 import logging
+import yaml
 
 SPOKE_ACCOUNTS = [
-    {"account_id": "587217771608", "role_name": "terraform-role-poweruser"},
+    {"account_id": "913524936878", "role_name": "terraform-role-poweruser"},
 ]
 
 def create_logger(name: str = "my_logger", level: str = "INFO") -> logging.Logger:
@@ -29,17 +30,17 @@ def create_logger(name: str = "my_logger", level: str = "INFO") -> logging.Logge
 # Initialize logger
 logger = create_logger("my_app_logger", "debug")
 
-# def load_config_from_ssm():
-#     ssm = boto3.client('ssm')
-#     try:
-#         response = ssm.get_parameter(
-#             Name='/eks-versions-dashboard/config',
-#             WithDecryption=True
-#         )
-#         return json.loads(response['Parameter']['Value'])
-#     except Exception as e:
-#         print(f"Error loading config from SSM: {e}")
-#         return {}
+def load_config_from_ssm():
+    ssm = boto3.client('ssm')
+    try:
+        response = ssm.get_parameter(
+            Name=os.getenv('SSM_CONFIG_PATH'),
+            WithDecryption=True
+        )
+        return yaml.safe_load(response['Parameter']['Value'])
+    except Exception as e:
+        print(f"Error loading config from SSM: {e}")
+        return {}
 
 def assume_role(account_id, role_name):
     try:
@@ -96,39 +97,19 @@ def get_eks_clusters_in_region(account, region, creds):
 def lambda_handler(event, context):
     try:
         all_data = []
-        # # body = json.loads(event['body'])
-        # logger.info("Parsed event body successfully")
+        config = load_config_from_ssm()
         
-        # if 'regions' not in body:
-        #     logger.error("No regions key in the event")
-        #     return {
-        #         "statusCode": 400,
-        #         "headers": {"Content-Type": "application/json"},
-        #         "body": json.dumps({"error": "Missing regions key in request"})
-        #     }
-            
-        # if 'spoke_accounts' not in body:
-        #     logger.error("No spoke_accounts key in the event")
-        #     return {
-        #         "statusCode": 400,
-        #         "headers": {"Content-Type": "application/json"},
-        #         "body": json.dumps({"error": "Missing spoke_accounts key in request"})
-        #     }
-            
-        spoke_accounts = [
-            {
-                "account_id": "587217771608",
-                "role_name": "terraform-role-poweruser"
+        if not config:
+            logger.error("No config found in SSM")
+            return {
+                "statusCode": 500,
+                "headers": {"Content-Type": "application/json"},
+                "body": json.dumps({"error": "Internal server error: No config found"})
             }
-        ]
-        
-        regions = [
-            "eu-west-1",
-            "us-east-1"
-        ]
+            
+        spoke_accounts = config.get('spoke_accounts', SPOKE_ACCOUNTS)
         
         logger.debug(f"Received spoke_accounts: {spoke_accounts}")
-        logger.debug(f"Received regions: {regions}")
         
         for account in spoke_accounts:
             account_id = account['account_id']
@@ -140,7 +121,7 @@ def lambda_handler(event, context):
                 logger.debug(f"Failed to assume role {role_name} for account {account_id}")
                 continue  # <-- important
                 
-            for region in regions:
+            for region in account.get('regions', []):
                 clusters = get_eks_clusters_in_region(account_id, region, creds)
                 all_data.extend(clusters)
 
