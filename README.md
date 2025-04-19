@@ -18,7 +18,7 @@ A simple serverless dashboard to display **EKS clusters** across **multiple AWS 
     ```bash
     cd backend
     sam build
-    sam deploy --guided
+    sam deploy
     ```
 
 2. During deployment, set the following environment variables:
@@ -31,7 +31,7 @@ A simple serverless dashboard to display **EKS clusters** across **multiple AWS 
 1. Navigate to the frontend folder, install dependencies, and build:
 
     ```bash
-    cd frontend
+    cd frontend/vue
     npm install
     npm run build
     ```
