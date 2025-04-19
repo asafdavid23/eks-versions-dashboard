@@ -95,11 +95,10 @@ Resources:
     Properties:
       LayerName: eks-versions-dashboard-backend
       Description: eks-versions-dashboard backend layer
-      ContentUri: layer/python
+      ContentUri: layer/
       CompatibleRuntimes:
-        - python3.13
+        - python3.12
       CompatibleArchitectures:
-        - x86_64
         - arm64
       LicenseInfo: MIT
 
@@ -108,7 +107,7 @@ Resources:
     Properties:
       CodeUri: backend/
       Handler: app.lambda_handler
-      Runtime: python3.13
+      Runtime: python3.12
       Environment:
         Variables:
           SSM_CONFIG_PATH: !Ref SSMConfig
