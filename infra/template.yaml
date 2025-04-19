@@ -119,11 +119,11 @@ Resources:
         AllowHeaders: "'Content-Type,X-Api-Key,Access-Control-Allow-Origin'"
         AllowOrigin: "'https://d1fghl4jj9578s.cloudfront.net'"
 
-  EKSVersionsDashboardBackend:
+  BackendLambda:
     Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
     Properties:
       CodeUri: backend/
-      Handler: app.lambda_handler
+      Handler: fetch_clusters.lambda_handler
       Runtime: python3.12
       Environment:
         Variables:
