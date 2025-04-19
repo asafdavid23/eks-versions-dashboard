@@ -1,0 +1,157 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  eks-versions-dashboard
+
+  Sample SAM Template for eks-versions-dashboard
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 20
+    LoggingConfig:
+      LogFormat: JSON
+      ApplicationLogLevel: INFO
+      SystemLogLevel: WARN
+
+
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${AWS::AccountId}-${AWS::Region}-eks-versions-dashboard"
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: error.html
+
+  CloudFrontOriginAccessControl:
+    Type: AWS::CloudFront::OriginAccessControl
+    Properties:
+      OriginAccessControlConfig:
+        Name: !Sub "${S3Bucket}-OAC"
+        OriginAccessControlOriginType: s3
+        SigningBehavior: always
+        SigningProtocol: sigv4
+        Description: !Sub "OAC for ${S3Bucket}"
+
+  S3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref S3Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: "cloudfront.amazonaws.com"
+            Action: s3:GetObject
+            Resource:
+              Fn::Sub: arn:aws:s3:::${S3Bucket}/*
+            Condition:
+              StringEquals:
+                AWS:SourceArn: !Sub arn:aws:cloudfront::${AWS::AccountId}:distribution/${CloudFront.Id}
+
+  CloudFront:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: 'true'
+        Origins:
+          - Id: S3-S3Bucket
+            DomainName: !GetAtt S3Bucket.RegionalDomainName
+            OriginAccessControlId: !Ref CloudFrontOriginAccessControl
+            S3OriginConfig: {}
+        DefaultRootObject: index.html
+        DefaultCacheBehavior:
+          TargetOriginId: S3-S3Bucket
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods:
+            - GET
+            - HEAD
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6
+          OriginRequestPolicyId: 88a5eaf4-2fd4-4709-b370-b4c650ea3fcf 
+        PriceClass: PriceClass_100 # Use this for the lowest cost, or adjust based on your needs
+        ViewerCertificate:
+          CloudFrontDefaultCertificate: true
+
+  SSMConfig:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /devops/eks/version_ashboard/config
+      Type: String
+      Description: Configuration for eks-versions-dashboard
+      Value: |
+        spoke_accounts:
+          - account_id: 587217771608
+            account_name: dev
+            role_name: terraform-role-poweruser
+            regions:
+            - eu-west-1
+            - us-east-1
+            - eu-north-1
+
+  BackendLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: eks-versions-dashboard-backend
+      Description: eks-versions-dashboard backend layer
+      ContentUri: layer/
+      CompatibleRuntimes:
+        - python3.12
+      CompatibleArchitectures:
+        - arm64
+      LicenseInfo: MIT
+
+  APIGateway:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: eks-versions-dashboard-api
+      Description: eks-versions-dashboard API
+      StageName: Prod
+      Auth:
+        ApiKeyRequired: false
+        UsagePlan:
+          CreateUsagePlan: PER_API
+          Description: eks-versions-dashboard API key
+          UsagePlanName: eks-versions-dashboard-usage-plan
+      Cors:
+        AllowMethods: "'OPTIONS,GET'"
+        AllowHeaders: "'Content-Type,X-Api-Key,Access-Control-Allow-Origin'"
+        AllowOrigin: "'https://d1fghl4jj9578s.cloudfront.net'"
+
+  EKSVersionsDashboardBackend:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: backend/
+      Handler: app.lambda_handler
+      Runtime: python3.12
+      Environment:
+        Variables:
+          SSM_CONFIG_PATH: !Ref SSMConfig
+      Architectures:
+      - arm64
+      Layers:
+        - !Ref BackendLayer
+      Policies:
+        - AWSLambdaBasicExecutionRole
+        - PowerUserAccess
+      Events:
+        EKSVersionsDashboardApi:
+          Type: Api
+           # More info about API Event Source: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#api
+          Properties:
+            Path: /api/eks/clusters
+            Method: GET
+            RestApiId: !Ref APIGateway
+
+
+Outputs:
+  EKSVersionsDashboardApi:
+    Description: API Gateway endpoint URL for Prod stage for Hello World function
+    Value: !Sub "https://${APIGateway}.execute-api.${AWS::Region}.amazonaws.com/Prod/api/eks/clusters"
+  EKSVersionsDashboardBackend:
+    Description: Hello World Lambda Function ARN
+    Value: !GetAtt EKSVersionsDashboardBackend.Arn
+  EKSVersionsDashboardBackendIamRole:
+    Description: Implicit IAM Role created for Hello World function
+    Value: !GetAtt EKSVersionsDashboardBackendRole.Arn
