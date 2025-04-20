@@ -1,19 +1,20 @@
 version: 3
 
 tasks:
-  start-api:
+  start:
+    desc: "Start the local API"
     cmds:
-      - nohup sam local start-api > sam.log 2>&1 & echo $! > sam.pid
+      - nohup sh -c 'sam local start-api -t infra/template.yaml & echo $! > .sam.pid' > sam.log 2>&1 &
     silent: true
 
-  stop-api:
+  stop:
+    desc: "Stop the local API"
     cmds:
-      - |
-        if [ -f sam.pid ]; then
-          kill $(cat sam.pid) && rm sam.pid
-          echo "SAM local API server stopped."
-        else
-          echo "No PID file found. SAM server may not be running."
-        fi
-    silent: false
+      - echo "Stopping local API..."
+      - kill $(cat .sam.pid)
+      - rm sam.log || true
+      - rm .sam.pid || true
+    silent: true
+
+
 

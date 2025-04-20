@@ -2,8 +2,14 @@ version: '3'
 
 tasks:
   start:
+    desc: "Start Vue.js frontend locally"
     cmds:
-      - echo "Run Vue.js frontend locally"
-      - BROWSER=none nohup npm --prefix frontend/vue run dev -- --port 8080 &
-      - echo "Frontend is running on http://localhost:8080"
-  silent: false
+      - nohup sh -c 'npm run dev --prefix frontend/vue -- --port 8080 & echo $! > .frontend_pid' > frontend.log 2>&1 &
+
+  stop:
+    desc: "Stop Vue.js frontend locally"
+    cmds:
+      - echo "Stopping Vue.js frontend..."
+      - kill $(cat .frontend_pid)
+      - rm frontend.log || true
+      - rm .frontend_pid || true
