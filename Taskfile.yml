@@ -5,20 +5,33 @@ dotenv:
   - .env.local
 
 includes:
-  # fe-local: ./frontend/Taskfile.local.yml
+  fe-local: ./frontend/Taskfile.local.yml
   fe-prod: ./frontend/Taskfile.prod.yml
-  # be-local: ./infra/Taskfile.local.yml
+  be-local: ./infra/Taskfile.local.yml
   be-prod: ./infra/Taskfile.prod.yml
 
 tasks:
-  fe-build-and-deploy:
-    desc: Build and deploy the frontend
+  up-local:
+    desc: Start the local environment
     cmds:
-      - task: fe-prod:build
-      - task: fe-prod:deploy
+      - task: be-local:start
+      - task: fe-local:start
+    silent: false
 
-  be-validate-and-deploy:
-    desc: Validate and deploy the backend
+  down-local:
+    desc: Stop the local environment
     cmds:
-      - task: be-prod:validate
-      - task: be-prod:deploy
+      - task: fe-local:stop
+      - task: be-local:stop
+    silent: false
+  # fe-build-and-deploy:
+  #   desc: Build and deploy the frontend
+  #   cmds:
+  #     - task: fe-prod:build
+  #     - task: fe-prod:deploy
+
+  # be-validate-and-deploy:
+  #   desc: Validate and deploy the backend
+  #   cmds:
+  #     - task: be-prod:validate
+  #     - task: be-prod:deploy

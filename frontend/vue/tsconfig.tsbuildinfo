@@ -1,1 +1,1 @@
-{"root":["./src/main.ts","./src/vite-env.d.ts","./src/app.vue","./src/components/clustertable.vue"],"version":"5.7.3"}
+{"root":["./src/main.ts","./src/vite-env.d.ts","./src/composables/useclusters.ts","./src/types/cluster.ts","./src/app.vue","./src/components/clustertable.vue","./src/components/clustertabledata.vue","./src/components/clustertablefilters.vue"],"version":"5.7.3"}
