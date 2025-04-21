@@ -27,3 +27,4 @@ dist-ssr
 infra/layer/python*
 *.vue.js
 *.js
+*.pid
